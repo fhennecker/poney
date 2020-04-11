@@ -17,8 +17,9 @@ fn main() {
         spawn(move || {
             let mut websocket = accept(stream.unwrap()).unwrap();
             // send fake teams message upfront for debug
-            let fake_available_teams_msg =
-                Message::from(format!("{{\"payload\": [\"chaussettes\", \"saucettes\"]}}"));
+            let fake_available_teams_msg = Message::from(format!(
+                "{\"type\": \"available_teams\"{\"payload\": [\"chaussettes\", \"saucettes\"]}}"
+            ));
             websocket.write_message(fake_available_teams_msg).unwrap();
 
             loop {
