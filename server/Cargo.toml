@@ -1,0 +1,18 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["Florentin Hennecker <fhennecker@scortex.io>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tungstenite = "*"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
