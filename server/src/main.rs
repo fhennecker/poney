@@ -1,9 +1,11 @@
 use std::net::{TcpListener, TcpStream};
 use std::thread::spawn;
+use std::sync::mpsc::{channel, Sender, Receiver};
 use tungstenite::protocol::{Message, WebSocket};
 use tungstenite::server::accept;
 
 pub mod poneyprotocol;
+use poneyprotocol::*;
 
 #[cfg(debug_assertions)]
 const BIND_IP: &str = "127.0.0.1:9001";
@@ -11,9 +13,7 @@ const BIND_IP: &str = "127.0.0.1:9001";
 #[cfg(not(debug_assertions))]
 const BIND_IP: &str = "0.0.0.0:9001";
 
-fn client_thread(mut websocket: WebSocket<TcpStream>) {
-    use poneyprotocol::*;
-
+fn client_thread(mut websocket: WebSocket<TcpStream>, chan_tx: Sender<UpConnMsg>) {
     // send fake teams message upfront for debug
     let msg = DownConnMsg::AvailableTeams {
         teams: vec![
@@ -36,25 +36,35 @@ fn client_thread(mut websocket: WebSocket<TcpStream>) {
 
         let deserialized: Result<UpConnMsg,serde_json::error::Error> = serde_json::from_str(&text);
         match deserialized {
-            Ok(x) => println!("Deserialized: {:?}", x),
+            Ok(x) => {
+                println!("Deserialized: {:?}", x);
+                chan_tx.send(x);
+            },
             Err(x) => println!("Cannot deserialize {}: {}", &text, x),
         }
     }
 }
 
-fn game_manager_thread() {
-
+fn game_manager_thread(chan_rx: Receiver<UpConnMsg>) {
+    loop {
+        println!("The Master Of the Games received: {:?}", chan_rx.recv().unwrap());
+    }
 }
 
 fn main() {
     println!("Started server on {}", BIND_IP);
 
-    spawn(game_manager_thread);
+    let (tx, rx) = channel::<UpConnMsg>();
+
+    spawn(move || {
+        game_manager_thread(rx);
+    });
 
     let server = TcpListener::bind(BIND_IP).unwrap();
     for stream in server.incoming() {
+        let sender = tx.clone();
         spawn(move || {
-            client_thread(accept(stream.unwrap()).unwrap());
+            client_thread(accept(stream.unwrap()).unwrap(), sender);
         });
     }
 }

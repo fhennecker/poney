@@ -17,6 +17,8 @@ pub enum DownConnMsg {
     GameStarted {username: String},
 }
 
+// {"type": "join_request", "payload": {"username": "Plop", "team": "Team Team"}}
+
 // Upstream message (client->server) in the connection management context
 #[derive(Deserialize, Debug)]
 #[serde(tag="type", content="payload", rename_all="snake_case")]
