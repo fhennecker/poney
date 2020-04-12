@@ -1,6 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::spawn;
+use std::collections::HashMap;
 use tungstenite::protocol::{Message, WebSocket};
 use tungstenite::server::accept;
 
@@ -18,10 +19,12 @@ fn client_thread(
     client_to_gm_tx: Sender<UpConnMsg>,
     gm_to_client_rx: Receiver<DownConnMsg>,
 ) {
+    let mut active_teams: HashMap<String,Vec<String>> = HashMap::new();
+    active_teams.insert("chaussettes".to_string(), vec![]);
+    active_teams.insert("saucettes".to_string(), vec![]);
+
     // send fake teams message upfront for debug
-    let msg = DownConnMsg::AvailableTeams {
-        teams: vec!["chaussettes".to_string(), "saucettes".to_string()],
-    };
+    let msg = DownConnMsg::AvailableTeams {teams:active_teams.keys().collect()};
     let serialized = serde_json::to_string(&msg).unwrap();
     let fake_available_teams_msg = Message::from(serialized);
     websocket.write_message(fake_available_teams_msg).unwrap();
@@ -37,10 +40,7 @@ fn client_thread(
 
         let deserialized: Result<UpConnMsg, serde_json::error::Error> = serde_json::from_str(&text);
         match deserialized {
-            Ok(x) => {
-                println!("Deserialized: {:?}", x);
-                client_to_gm_tx.send(x);
-            }
+            Ok(x) => client_to_gm_tx.send(x).unwrap(),
             Err(x) => println!("Cannot deserialize {}: {}", &text, x),
         }
     }

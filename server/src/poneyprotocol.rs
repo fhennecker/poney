@@ -9,9 +9,9 @@ pub struct Item {
 // Downstream message (server->client) in the connection management context
 #[derive(Serialize, Debug)]
 #[serde(tag="type", content="payload", rename_all="snake_case")]
-pub enum DownConnMsg {
+pub enum DownConnMsg<'a> {
     Welcome,
-    AvailableTeams {teams: Vec<String>},
+    AvailableTeams {teams: Vec<&'a String>},
     JoinedGame,
     PlayerConnected {username: String, team: String},
     GameStarted {username: String},
