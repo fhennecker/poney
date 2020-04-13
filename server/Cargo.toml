@@ -15,7 +15,3 @@ serde_json = { version = "1.0" }
 [[bin]]
 name = "server"
 path = "src/main.rs"
-
-[[bin]]
-name = "client"
-path = "src/client.rs"
