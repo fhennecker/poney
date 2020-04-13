@@ -1,12 +1,14 @@
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::spawn;
-use std::collections::HashMap;
 use tungstenite::protocol::{Message, WebSocket};
 use tungstenite::server::accept;
 
 pub mod poneyprotocol;
 use poneyprotocol::*;
+
+mod game;
+use game::*;
 
 #[cfg(debug_assertions)]
 const BIND_IP: &str = "127.0.0.1:9001";
@@ -19,12 +21,14 @@ fn client_thread(
     client_to_gm_tx: Sender<UpConnMsg>,
     gm_to_client_rx: Receiver<DownConnMsg>,
 ) {
-    let mut active_teams: HashMap<String,Vec<String>> = HashMap::new();
-    active_teams.insert("chaussettes".to_string(), vec![]);
-    active_teams.insert("saucettes".to_string(), vec![]);
+    let mut game = Game::new();
+    game.add_player_to_team("Mirceau", "Chaussettes");
+    game.add_player_to_team("Jesus", "Saucettes");
 
     // send fake teams message upfront for debug
-    let msg = DownConnMsg::AvailableTeams {teams:active_teams.keys().collect()};
+    let msg = DownConnMsg::AvailableTeams {
+        teams: game.teams.keys().collect(),
+    };
     let serialized = serde_json::to_string(&msg).unwrap();
     let fake_available_teams_msg = Message::from(serialized);
     websocket.write_message(fake_available_teams_msg).unwrap();
